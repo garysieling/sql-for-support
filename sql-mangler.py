@@ -1,0 +1,77 @@
+
+import sqlparse
+from itertools import groupby
+import ctypes
+
+def clean(arr):
+  stripped = [x.strip() for x in arr]
+  return [x for x in stripped if not '(' + x + ')' in stripped]
+
+def get_clauses(tokens):
+  found = [];
+  for token in tokens:    
+    if (token.is_group() and type(token) is sqlparse.sql.Parenthesis):
+      found.append(token.to_unicode())
+      found.extend(get_clauses(token.tokens))
+    elif (token.is_group()):
+      found.append(token.to_unicode())
+
+  return found
+
+def generate_case(token, index):
+  return '(case when (' + token + ') then 1 else 0 end) as a' + str(index)
+
+def replaceSelect(tokens, toSelect):
+  foundSelect = False
+  foundFrom = False
+  addedSelect = False
+
+  resultSql = ''
+  for token in tokens:
+    if token.value.lower() == 'from':
+      foundFrom = True
+
+    if not foundSelect or foundFrom:
+      resultSql = resultSql + token.to_unicode()
+    else:
+      if not addedSelect:
+        resultSql = resultSql + ' ' + toSelect + ' '
+        addedSelect = True
+
+    if token.value.lower() == 'select':
+      foundSelect = True
+
+  return resultSql
+
+def removeWhere(stmt):
+  return [x for x in stmt.flatten() \
+     if not x.within(sqlparse.sql.Where)]
+
+def getWhere(stmt):
+  results = [x for x in stmt.tokens \
+     if type(x) is sqlparse.sql.Where]
+
+  if len(results) > 0:
+    return results[0]
+  else: 
+    return None
+
+def convert(sql):
+  res = sqlparse.parse(sql)
+  stmt = res[0]
+
+  noWhere = removeWhere(stmt)
+  where = getWhere(stmt)
+ 
+  toSelectColumns = '*'
+
+  if where <> None:
+    clauses = clean(get_clauses(where.tokens))
+
+    toSelectColumns = \
+      [generate_case(x, i) \
+        for (i, x) in enumerate(clauses)]
+
+  toSelect = ', '.join(toSelectColumns)
+
+  return replaceSelect(noWhere, toSelect)
