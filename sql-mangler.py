@@ -1,7 +1,8 @@
+import ctypes
 import sqlparse
+
 from sqlparse import sql
 from itertools import groupby
-import ctypes
 
 def clean(arr):
   stripped = [x.strip() for x in arr]
