@@ -1,5 +1,5 @@
-
 import sqlparse
+from sqlparse import sql
 from itertools import groupby
 import ctypes
 
@@ -8,9 +8,9 @@ def clean(arr):
   return [x for x in stripped if not '(' + x + ')' in stripped]
 
 def get_clauses(tokens):
-  found = [];
+  found = []
   for token in tokens:    
-    if (token.is_group() and type(token) is sqlparse.sql.Parenthesis):
+    if (token.is_group() and type(token) is sql.Parenthesis):
       found.append(token.to_unicode())
       found.extend(get_clauses(token.tokens))
     elif (token.is_group()):
@@ -45,11 +45,11 @@ def replaceSelect(tokens, toSelect):
 
 def removeWhere(stmt):
   return [x for x in stmt.flatten() \
-     if not x.within(sqlparse.sql.Where)]
+     if not x.within(sql.Where)]
 
 def getWhere(stmt):
   results = [x for x in stmt.tokens \
-     if type(x) is sqlparse.sql.Where]
+     if type(x) is sql.Where]
 
   if len(results) > 0:
     return results[0]
@@ -57,8 +57,7 @@ def getWhere(stmt):
     return None
 
 def convert(sql):
-  res = sqlparse.parse(sql)
-  stmt = res[0]
+  stmt = sqlparse.parse(sql)[0]
 
   noWhere = removeWhere(stmt)
   where = getWhere(stmt)
