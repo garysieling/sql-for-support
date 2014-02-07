@@ -21,7 +21,7 @@ def get_clauses(tokens):
 def generate_case(token, index):
   return '(case when (' + token + ') then 1 else 0 end) as a' + str(index)
 
-def replaceSelect(tokens, toSelect):
+def replace_select(tokens, toSelect):
   foundSelect = False
   foundFrom = False
   addedSelect = False
@@ -43,11 +43,11 @@ def replaceSelect(tokens, toSelect):
 
   return resultSql
 
-def removeWhere(stmt):
+def remove_where(stmt):
   return [x for x in stmt.flatten() \
      if not x.within(sql.Where)]
 
-def getWhere(stmt):
+def get_where(stmt):
   results = [x for x in stmt.tokens \
      if type(x) is sql.Where]
 
@@ -59,8 +59,8 @@ def getWhere(stmt):
 def convert(sql):
   stmt = sqlparse.parse(sql)[0]
 
-  noWhere = removeWhere(stmt)
-  where = getWhere(stmt)
+  noWhere = remove_where(stmt)
+  where = get_where(stmt)
  
   toSelectColumns = '*'
 
@@ -73,4 +73,4 @@ def convert(sql):
 
   toSelect = ', '.join(toSelectColumns)
 
-  return replaceSelect(noWhere, toSelect)
+  return replace_select(noWhere, toSelect)
